@@ -1,6 +1,8 @@
 package ro.code4.monitorizarevot.fragment;
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,10 +17,14 @@ import ro.code4.monitorizarevot.BaseFragment;
 import ro.code4.monitorizarevot.R;
 import ro.code4.monitorizarevot.constants.County;
 import ro.code4.monitorizarevot.db.Preferences;
+import ro.code4.monitorizarevot.viewmodel.BranchSelectionViewModel;
 
-public class BranchSelectionFragment extends BaseFragment {
+public class BranchSelectionFragment extends BaseFragment<BranchSelectionViewModel> {
+
     private Spinner countySpinner;
+
     private EditText branchNumber;
+
     private County selectedCounty;
 
     public static BranchSelectionFragment newInstance() {
@@ -27,11 +33,11 @@ public class BranchSelectionFragment extends BaseFragment {
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_branch_selection, container, false);
 
-        countySpinner = (Spinner) rootView.findViewById(R.id.branch_selector_county);
-        branchNumber = (EditText) rootView.findViewById(R.id.branch_number_input);
+        countySpinner = rootView.findViewById(R.id.branch_selector_county);
+        branchNumber = rootView.findViewById(R.id.branch_number_input);
 
         branchNumber.setEnabled(false);
 
@@ -51,9 +57,24 @@ public class BranchSelectionFragment extends BaseFragment {
         }
     }
 
+    @Override
+    public String getTitle() {
+        return getString(R.string.title_branch_selection);
+    }
+
+    @Override
+    public boolean withMenu() {
+        return false;
+    }
+
+    @Override
+    protected void setupViewModel() {
+        viewModel = ViewModelProviders.of(this, factory).get(BranchSelectionViewModel.class);
+    }
+
     private void setCountiesDropdown(Spinner dropdown) {
         ArrayAdapter<String> countyAdapter = new ArrayAdapter<>(getActivity(),
-                R.layout.support_simple_spinner_dropdown_item, County.getCountiesNames());
+                                                                R.layout.support_simple_spinner_dropdown_item, County.getCountiesNames());
         dropdown.setAdapter(countyAdapter);
         dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -89,16 +110,6 @@ public class BranchSelectionFragment extends BaseFragment {
         });
     }
 
-    @Override
-    public String getTitle() {
-        return getString(R.string.title_branch_selection);
-    }
-
-    @Override
-    public boolean withMenu() {
-        return false;
-    }
-
     private void persistSelection() {
         Preferences.saveCountyCode(County.getCountyByIndex(countySpinner.getSelectedItemPosition()).getCode());
         Preferences.saveBranchNumber(getBranchNumber());
@@ -114,6 +125,6 @@ public class BranchSelectionFragment extends BaseFragment {
 
     public String getBranchExceededError() {
         return getString(R.string.invalid_branch_number_max,
-                selectedCounty.getName(), String.valueOf(selectedCounty.getBranchesCount()));
+                         selectedCounty.getName(), String.valueOf(selectedCounty.getBranchesCount()));
     }
 }

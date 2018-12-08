@@ -1,17 +1,14 @@
 package ro.code4.monitorizarevot.fragment;
 
 import android.app.TimePickerDialog;
+import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
-import android.widget.TextView;
-import android.widget.TimePicker;
-import android.widget.Toast;
+import android.widget.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -19,19 +16,26 @@ import java.util.Locale;
 
 import ro.code4.monitorizarevot.BaseFragment;
 import ro.code4.monitorizarevot.R;
+import ro.code4.monitorizarevot.constants.Constants;
 import ro.code4.monitorizarevot.db.Data;
 import ro.code4.monitorizarevot.db.Preferences;
 import ro.code4.monitorizarevot.net.model.BranchDetails;
 import ro.code4.monitorizarevot.util.DateUtils;
+import ro.code4.monitorizarevot.viewmodel.BranchDetailsViewModel;
 import ro.code4.monitorizarevot.widget.ChangeBranchBarLayout;
 
 import static ro.code4.monitorizarevot.ToolbarActivity.BRANCH_SELECTION_BACKSTACK_INDEX;
 
-public class BranchDetailsFragment extends BaseFragment implements View.OnClickListener {
+public class BranchDetailsFragment extends BaseFragment<BranchDetailsViewModel> implements View.OnClickListener {
+
     private RadioGroup environmentRadioGroup, sexRadioGroup;
+
     private RadioButton urban, rural, male, female;
+
     private TextView timeEnterText, timeLeaveText;
+
     private Calendar timeEnter, timeLeave;
+
     private BranchDetails existingBranchDetails;
 
     public static BranchDetailsFragment newInstance() {
@@ -40,17 +44,17 @@ public class BranchDetailsFragment extends BaseFragment implements View.OnClickL
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_branch_details, container, false);
 
-        environmentRadioGroup = (RadioGroup) rootView.findViewById(R.id.branch_group_environment);
-        urban = (RadioButton) rootView.findViewById(R.id.branch_environment_urban);
-        rural = (RadioButton) rootView.findViewById(R.id.branch_environment_rural);
-        male = (RadioButton) rootView.findViewById(R.id.branch_sex_male);
-        female = (RadioButton) rootView.findViewById(R.id.branch_sex_female);
-        sexRadioGroup = (RadioGroup) rootView.findViewById(R.id.branch_group_sex);
-        timeEnterText = (TextView) rootView.findViewById(R.id.branch_time_enter);
-        timeLeaveText = (TextView) rootView.findViewById(R.id.branch_time_leave);
+        environmentRadioGroup = rootView.findViewById(R.id.branch_group_environment);
+        urban = rootView.findViewById(R.id.branch_environment_urban);
+        rural = rootView.findViewById(R.id.branch_environment_rural);
+        male = rootView.findViewById(R.id.branch_sex_male);
+        female = rootView.findViewById(R.id.branch_sex_female);
+        sexRadioGroup = rootView.findViewById(R.id.branch_group_sex);
+        timeEnterText = rootView.findViewById(R.id.branch_time_enter);
+        timeLeaveText = rootView.findViewById(R.id.branch_time_leave);
 
         timeEnterText.setOnClickListener(this);
         timeLeaveText.setOnClickListener(this);
@@ -62,7 +66,7 @@ public class BranchDetailsFragment extends BaseFragment implements View.OnClickL
     }
 
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         existingBranchDetails = Data.getInstance().getCurrentBranchDetails();
         if (existingBranchDetails != null) {
@@ -113,7 +117,13 @@ public class BranchDetailsFragment extends BaseFragment implements View.OnClickL
         });
     }
 
-    @Override
+    private void showTimePicker(int titleId, TimePickerDialog.OnTimeSetListener listener) {
+        Calendar now = Calendar.getInstance();
+        TimePickerDialog timePickerDialog = new TimePickerDialog(getActivity(),
+                                                                 listener, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true);
+        timePickerDialog.setTitle(titleId);
+        timePickerDialog.show();
+    }    @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.branch_time_enter:
@@ -139,21 +149,13 @@ public class BranchDetailsFragment extends BaseFragment implements View.OnClickL
         }
     }
 
-    private void showTimePicker(int titleId, TimePickerDialog.OnTimeSetListener listener) {
-        Calendar now = Calendar.getInstance();
-        TimePickerDialog timePickerDialog = new TimePickerDialog(getActivity(),
-                listener, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true);
-        timePickerDialog.setTitle(titleId);
-        timePickerDialog.show();
-    }
-
     private void updateCalendar(Calendar calendar, int hourOfDay, int minute) {
         calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
         calendar.set(Calendar.MINUTE, minute);
     }
 
     private void updateTimeText(Calendar calendar, TextView text) {
-        text.setText(new SimpleDateFormat("HH:mm", Locale.US).format(calendar.getTime()));
+        text.setText(new SimpleDateFormat(Constants.TIME_FORMAT, Locale.US).format(calendar.getTime()));
     }
 
     private void persistSelection() {
@@ -178,4 +180,11 @@ public class BranchDetailsFragment extends BaseFragment implements View.OnClickL
     public boolean withMenu() {
         return false;
     }
+
+    @Override
+    protected void setupViewModel() {
+        viewModel = ViewModelProviders.of(this, factory).get(BranchDetailsViewModel.class);
+    }
+
+
 }
